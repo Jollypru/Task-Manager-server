@@ -25,12 +25,29 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const userCollection = client.db('TaskManagerDB').collection('users');
+    const taskCollection = client.db('TaskManagerDB').collection('tasks')
 
 
     app.post('/users', async(req, res) => {
         const user = req.body;
         const result = await userCollection.insertOne(user);
         res.send(result);
+    })
+
+    app.get('/tasks', async(req, res) => {
+        const {email} = req.query;
+        const result =await taskCollection.find({userEmail: email}).toArray();
+        res.json(result);
+    })
+
+    app.post('/tasks', async(req, res) => {
+        const {title, description, category, userEmail} = req.body;
+        const newTask = {
+            title, description, category, userEmail, timeStamp: new Date()
+        };
+
+        const result = await taskCollection.insertOne(newTask);
+        res.json({ success: true, task: { ...newTask, _id: result.insertedId } });
     })
 
 
