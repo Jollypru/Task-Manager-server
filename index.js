@@ -59,6 +59,12 @@ async function run() {
         res.json({success: true})
     })
 
+    app.delete('/tasks/:id', async(req, res) => {
+        const {id} = req.params;
+        const result = await taskCollection.deleteOne({_id: new ObjectId(id)});
+        res.json({ message: "Task deleted successfully" });
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
