@@ -50,6 +50,22 @@ async function run() {
         res.json({ success: true, task: { ...newTask, _id: result.insertedId } });
     })
 
+    app.post('/tasks/reorder', async(req, res) => {
+        const {tasks} = req.body;
+        try{
+            for (let task of tasks){
+                await taskCollection.updateOne(
+                    { _id: new ObjectId(task._id) },
+                    {$set: {category: task.category}}
+                )
+            }
+            res.json({success: true})
+        }catch(error){
+            console.log('Error reordering task', error);
+            res.status(500).send('Internal Server Error');
+        }
+    })
+
     app.put('/tasks/:id', async(req, res) => {
         const {id} = req.params;
         const {title, description,category} = req.body;
