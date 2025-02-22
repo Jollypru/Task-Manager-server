@@ -5,7 +5,9 @@ const app = express();
 const port = process.env.PORT || 5000 ;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5175','https://task-manager-client-two.vercel.app', 'https://task-manager-client-ptdh5dkwz-jolly181s-projects.vercel.app']
+}));
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -28,7 +30,8 @@ async function run() {
     const userCollection = client.db('TaskManagerDB').collection('users');
     const taskCollection = client.db('TaskManagerDB').collection('tasks');
 
-    const wss = new WebSocket.Server({port: 5001});
+    const server = require('http').createServer(app);
+    const wss = new WebSocket.Server({server});
     wss.on("connection", (ws) => {
         // console.log('Client connected to websocket');
         ws.send(JSON.stringify({type: 'connection', message: 'connected'}))
@@ -109,6 +112,6 @@ async function run() {
 run().catch(console.dir);
 
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`server is running on port: ${port}`);
 })
