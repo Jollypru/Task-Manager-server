@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require('express');
 const cors = require('cors');
+const websocket = require('ws');
 const app = express();
 const port = process.env.PORT || 5000 ;
 
@@ -9,6 +10,7 @@ app.use(cors());
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const WebSocket = require("ws");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nor5r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -25,8 +27,23 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const userCollection = client.db('TaskManagerDB').collection('users');
-    const taskCollection = client.db('TaskManagerDB').collection('tasks')
+    const taskCollection = client.db('TaskManagerDB').collection('tasks');
 
+    const wss = new WebSocket.Server({port: 5001});
+    wss.on("connection", (ws) => {
+        console.log('Client connected to websocket');
+        ws.send(JSON.stringify({type: 'connection', message: 'connected'}))
+    })
+
+    const changeStream = taskCollection.watch();
+    changeStream.on("change", (change) => {
+        console.log('db change detected', change);
+        wss.clients.forEach(client => {
+            if(client.readyState === WebSocket.OPEN){
+                client.send(JSON.stringify({type: 'update', change}))
+            }
+        })
+    })
 
     app.post('/users', async(req, res) => {
         const user = req.body;
